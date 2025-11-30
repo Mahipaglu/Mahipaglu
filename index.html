@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mahipaglus cutu cloud</title>
+    <title>Digital Memory Box</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Indie+Flower&family=Patrick+Hand&display=swap');
@@ -540,6 +540,17 @@
                         </div>
                     </div>
                     
+                    <!-- Greeting Label -->
+                    <div style="margin-bottom: 25px; text-align: center;">
+                        <div style="display: inline-block; background: white; padding: 12px 30px; 
+                                    border-radius: 25px; border: 2.5px solid #000;
+                                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                            <p style="font-size: 1.5rem; font-weight: bold; color: #2d2d2d; margin: 0;">
+                                Hi <span id="username">kuchupuchu</span> 👋
+                            </p>
+                        </div>
+                    </div>
+                    
                     <!-- All Pics folder icon - below green box -->
                     <div style="margin-left: auto; width: fit-content;">
                         <div class="cursor-pointer" onclick="showScreen('GALLERY')" 
@@ -660,23 +671,32 @@
         let strangerEnabled = true;
         let savedNote = 'Your special memories live here... ✨';
         
-        // Photo rotation for dashboard
-        const photos = [];
-        const photoFolder = 'photos/'; // Folder in your GitHub repo
-        const totalPhotos = 10; // Adjust this to match how many photos you have
+        // ============================================
+        // PHOTO MANAGEMENT SYSTEM
+        // ============================================
+        // INSTRUCTIONS:
+        // 1. Run your Google Apps Script to get photo links
+        // 2. Copy the output from the script
+        // 3. Paste it below replacing the galleryImages array
+        // 4. Save and deploy!
+        // ============================================
         
-        // Generate photo paths (assuming photos are named 1.jpg, 2.jpg, etc.)
-        for (let i = 1; i <= totalPhotos; i++) {
-            photos.push(`${photoFolder}${i}.jpg`);
-        }
+        const galleryImages = [
+            "https://drive.google.com/uc?export=view&id=1Fbnj_T9V4FYJsEnIkbUOjkruTSsxqvCY",
+            "https://drive.google.com/uc?export=view&id=13fxqUUwVoIqgZSE09qmLsibzdnWusmhM",
+            "https://drive.google.com/uc?export=view&id=1kfX2Fr5gMXdxS6JALCxvhmo4H-SUCtz1"
+        ];
+        
+        // Auto-filter to remove empty/invalid links
+        const validGalleryImages = galleryImages.filter(link => link && link.trim() !== '');
         
         let currentPhotoIndex = 0;
         
         function rotatePhoto() {
             const photoElement = document.getElementById('dashboardPhoto');
-            if (photoElement && photos.length > 0) {
-                currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
-                photoElement.src = photos[currentPhotoIndex];
+            if (photoElement && validGalleryImages.length > 0) {
+                currentPhotoIndex = (currentPhotoIndex + 1) % validGalleryImages.length;
+                photoElement.src = validGalleryImages[currentPhotoIndex];
             }
         }
         
@@ -723,6 +743,66 @@
                     settingsBtn.style.display = 'flex';
                 }
             }
+            
+            if (screenId === 'GALLERY') {
+                loadGallery();
+            }
+        }
+        
+        // Load gallery with photos
+        function loadGallery() {
+            const galleryGrid = document.getElementById('galleryGrid');
+            const emptyGallery = document.getElementById('emptyGallery');
+            
+            if (validGalleryImages.length === 0) {
+                galleryGrid.innerHTML = '';
+                emptyGallery.style.display = 'block';
+                return;
+            }
+            
+            emptyGallery.style.display = 'none';
+            galleryGrid.innerHTML = '';
+            
+            validGalleryImages.forEach((imageUrl, index) => {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'polaroid';
+                photoCard.style.cssText = `
+                    background: white;
+                    padding: 12px;
+                    padding-bottom: 40px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                    transform: rotate(${Math.random() * 6 - 3}deg);
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    cursor: pointer;
+                `;
+                
+                photoCard.onmouseenter = function() {
+                    this.style.transform = 'rotate(0deg) scale(1.05)';
+                    this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
+                };
+                
+                photoCard.onmouseleave = function() {
+                    this.style.transform = `rotate(${Math.random() * 6 - 3}deg) scale(1)`;
+                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                };
+                
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = `Memory ${index + 1}`;
+                img.style.cssText = `
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    display: block;
+                `;
+                
+                img.onerror = function() {
+                    this.src = 'https://via.placeholder.com/200x200/ffb3d9/ffffff?text=Photo+' + (index + 1);
+                };
+                
+                photoCard.appendChild(img);
+                galleryGrid.appendChild(photoCard);
+            });
         }
         
         // Authentication
@@ -732,7 +812,7 @@
                 isOwner = true;
                 showScreen('DASHBOARD');
             } else {
-                alert('Wrong secret word! Try again 💕');
+                showErrorMessage('Oopsie! Wrong secret word, try again! 💕✨');
             }
         }
         
@@ -742,10 +822,22 @@
                 isOwner = false;
                 showScreen('DASHBOARD');
             } else if (!strangerEnabled) {
-                alert('Stranger login is currently disabled!');
+                showErrorMessage('Aww! Stranger login is disabled right now 🙈');
             } else {
-                alert('Invalid code! Try again.');
+                showErrorMessage('Hmm... that code doesn\'t look right! Try again! 🤔💫');
             }
+        }
+        
+        // Show cute error message
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 2000);
         }
         
         // Settings Functions
@@ -784,5 +876,4 @@
         }
     </script>
 </body>
-
 </html>
